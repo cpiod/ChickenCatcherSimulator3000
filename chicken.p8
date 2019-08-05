@@ -102,7 +102,7 @@ function _update60()
 	  if #chick==0 then
 	   reinit()
 	   return
-	  else
+	  elseif hand_x==0 and hand_y==0 then
 	   -- update hand position and make run
 	   hand_xo=20 hand_yo=-20 s=2 make_run()
 	  end
@@ -285,8 +285,8 @@ function _draw()
 	 niceprint("by cpiod (code) and",nil,113,7,0)
 	 niceprint("wickedwormwood (pixels)",nil,121,7,0)
 	end
-	camera()
-	print(stat(0).."kib "..(100*stat(1)).."% "..stat(7).."fps",1,23,8)
+--	camera()
+--	print(stat(0).."kib "..(100*stat(1)).."% "..stat(7).."fps",1,23,8)
 end
 
 -- check whether something is on screen
