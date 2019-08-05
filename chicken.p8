@@ -4,68 +4,77 @@ __lua__
 -- chicken catcher simulator 3000
 -- by cpiod and wickedwormwodd
 
-function _init()
--- state: 0=menu
--- 1=game
--- 2=capturing
--- 3=captured
+function reinit()
  s=0
--- music(0)
  tmsg=0
- sounddone=false
+ sounddone=false -- for game over sfx
  score=0
- nbchick=20
- camx=sizex
- sizex=128*3
- sizey=128*3
- hand_x=0
- hand_y=0
- hand_xo=0
- hand_yo=0
- sounds={"","","","coo coo",""}
- sounds2={"cot cot","tock tock","kokkokko","motherfucker","cluck cluck"}
- camx=sizex/2-64
- camy=sizey/2-64
- animation={{8,6,40},{10,12},{6},{36,40},{42,44}}
- speed={4,5,1,5,5}
  chick={}
- ccolor={1,1,1,1,1,2,3,4,5,5,5}
- plants={}
- plantsbig={}
- insects={}
- ins_spr={2,18,38,54}
- ins_speed={0,.1,.2,.1}
- -- chicken status:
- -- 1=move
- -- 2=peck
- -- 3=stop
- -- 4=run
- m=50
- next_state={{2,2,4,3},{1,1,3},{1,3},{1,1,2,3},{1,1,2,3}}
- len_state={2,4,2,1,3}
- for i=1,10 do --4x4
-  add(plants,{x=rnd(sizex-32),y=rnd(sizey-32),s=rnd_state({64,68}),m=rnd()<.5,l=4})
- end
- for i=1,200 do --2x2
-  add(plants,{x=rnd(sizex-16),y=rnd(sizey-16),s=rnd_state({72,74,76,78,104,106,108,110,201,203,205}),m=rnd()<.5,l=2})
- end
- for i=1,200 do --1x1
-  add(plants,{x=rnd(sizex-8),y=rnd(sizey-8),s=rnd_state({233,234,235,236,237}),m=rnd()<.5,l=1})
- end
-
- sort_by_y(plants)
- for i=1,100 do
-  add(insects,{x=rnd(sizex),y=rnd(sizey),s=1+flr(rnd(4)),m=rnd()<.5,t0=rnd(),v=.5+rnd(1)})
- end
  for i=1,nbchick do
   vx=rnd(.1)+.5
   vy=rnd(vx/2)
   if(rnd()<.5) vx=-vx
   if(rnd()<.5) vy=-vy
-  add(chick,{x=m+rnd(sizex-2*m-16),y=m+rnd(sizey-2*m-16),vx=vx,vy=vy,s=1+flr(rnd(3)),t=rnd(3),t0=rnd(),c=rnd_state(ccolor)})
+  add(chick,{x=m+rnd(sizex-2*m-16),y=m+rnd(sizey-2*m-16),vx=vx,vy=vy,s=1+flr(rnd(3)),t=rnd(3),t0=rnd(),c=rnd_state(ccolor),l=2})
  end
+ hand_x=0
+ hand_y=0
+ hand_xo=0
+ hand_yo=0
+ camx=sizex/2-64
+ camy=sizey/2-64
+
 end
 
+function _init()
+-- state: 0=menu
+-- 1=game
+-- 2=capturing
+-- 3=captured
+
+-- chicken status:
+-- 1=move
+-- 2=peck
+-- 3=stop
+-- 4=run
+-- 5=flee
+ nbchick=20
+ sizex=128*3 -- pen size
+ sizey=128*3
+ sounds={"","","","coo coo",""} -- line 1
+ sounds2={"cot cot","tock tock","kokkokko","motherfucker","cluck cluck"} -- line 2
+ -- sprites for each chicken state
+ animation={{8,6,40},{10,12},{6},{36,8},{42,44}}
+ -- animation speed per state
+ speed={4,5,1,7,5}
+ ccolor={1,1,1,1,1,2,3,4,5,5,5}
+ plants={}
+ insects={}
+ ins_spr={2,18,38,54}
+ ins_speed={0,.1,.2,.1}
+ m=50 -- bounce margin
+ next_state={{2,2,4,3},{1,1,3},{1,3},{1,1,2,3},{1,1,2,3}}
+ len_state={2,4,2,1,3}
+ for i=1,10 do --4x4
+  add(plants,{x=rnd(sizex-32),y=rnd(sizey-32),s=rnd_state({64,68}),m=rnd()<.5,l=4})
+ end
+ for i=1,100 do --2x2
+  add(plants,{x=rnd(sizex-16),y=rnd(sizey-16),s=rnd_state({72,74,76,78,104,106,108,110,201,203,205}),m=rnd()<.5,l=2})
+ end
+ for i=1,500 do --1x1
+  add(plants,{x=rnd(sizex-8),y=rnd(sizey-8),s=rnd_state({233,234,235,236,237}),m=rnd()<.5,l=1})
+ end
+ sort_by_y(plants)
+ 
+ for i=1,100 do
+  add(insects,{x=rnd(sizex),y=rnd(sizey),s=1+flr(rnd(4)),m=rnd()<.5,t0=rnd(),v=.5+rnd(1),l=1})
+ end
+ sort_by_y(insects)
+ 
+ reinit()
+end
+
+-- sort by their y value
 function sort_by_y(t)
  for i=#t,2,-1 do
   done=true
@@ -87,37 +96,48 @@ function _update60()
 	  tmsg=t()+5
 	 end
 	elseif s==1 then
+	 -- capture
 	 if btnp(🅾️) then
+	  -- reset the game
 	  if #chick==0 then
-	   _init()
+	   reinit()
 	   return
 	  else
+	   -- update hand position and make run
 	   hand_xo=20 hand_yo=-20 s=2 make_run()
 	  end
 	 end
+	 -- controls
 	 if(btn(⬆️)) camy-=5
 	 if(btn(⬇️)) camy+=5
 	 if(btn(⬅️)) camx-=5
 	 if(btn(➡️)) camx+=5
+	 
+	 -- move camera
 	 if(camx<0) camx=0
 	 if(camx>sizex-128) camx=sizex-128
 	 if(camy<0) camy=0
 	 if(camy>sizey-128) camy=sizey-128
+	 
 	elseif s==3 and t()>ts then
+	 -- end of capturing animation
   hand_xo=0
   hand_yo=0
   s=1
  end
  
+ -- update hand position
  if(hand_x<hand_xo) hand_x+=2
  if(hand_y>hand_yo) hand_y-=4
 
  if(hand_x>hand_xo) hand_x-=1
  if(hand_y<hand_yo) hand_y+=1
 
+ -- hand are ready to capture
  if s==2 and hand_x==hand_xo and hand_y==hand_yo then
   c=chk_capture()
   if c!=nil then
+   -- a chicken is captured!
    del(chick,c)
    captured=c
    score+=1
@@ -125,6 +145,7 @@ function _update60()
    ts=t()+1
    sfx(0)
   else 
+   -- no chicken :(
    hand_xo=0
    hand_yo=0
    s=1
@@ -132,26 +153,33 @@ function _update60()
  end
 
  for i in all(insects) do
+  -- update insects position
   local mult=i.m and 1 or -1
   i.x+=mult*ins_speed[i.s]*i.v
+  -- bounce
+  if(i.x<2) i.m=true
+  if(i.x>sizex-10) i.m=false
  end
 
  for c in all(chick) do
+  -- change chicken state
   if c.t<t() then
    c.s=rnd_state(next_state[c.s])
    c.t=t()+len_state[c.s]+rnd(1)
   end
-  if c.s==1 then
+  -- chicken moving
+  if c.s==1 then -- walk
    c.x+=c.vx
    c.y+=c.vy
-  elseif c.s==4 then
+  elseif c.s==4 then -- run
    c.x+=3*c.vx
    c.y+=3*c.vy
-  elseif c.s==5 then
+  elseif c.s==5 then -- fly
    c.x+=5*c.vx
    c.y+=8*c.vy
   end
- 
+  
+  -- bounce
   if c.x<m then
    c.vx=abs(c.vx)
   elseif c.x>sizex-m-16 then
@@ -165,19 +193,18 @@ function _update60()
  end
 end
 
+-- get a random value of a table
 function rnd_state(t)
  return t[ceil(rnd(#t))]
 end
 
 function _draw()
-	cls(5)
-	if #chick>0 and rnd()>.99 then 
-	 if	rnd()<.5 then
-	  sfx(1)
-	 else
-	  sfx(2)
-	 end
-	end
+	cls(5) -- background
+	
+ -- peck sfx
+	if(#chick>0 and rnd()>1-#chick*0.001) sfx(rnd_state({1,2}))
+	
+	-- share if cupturing
 	if s==3 then
  	camera(camx+rnd(6)-3,camy+rnd(6)-3)
  else
@@ -185,18 +212,19 @@ function _draw()
  end
 	
 	for e in all(plants) do
-	 spr(e.s,e.x,e.y,e.l,e.l,e.m)
+	 if(is_on_screen(e.x,e.y,e.l)) spr(e.s,e.x,e.y,e.l,e.l,e.m)
 	end
 	
 	-- insects
 	for i in all(insects) do
-	 spr(ins_spr[i.s]+flr((3*t()+i.t0)%2),i.x,i.y,1,1,i.m)
+	 if(is_on_screen(i.x,i.y,i.l)) spr(ins_spr[i.s]+flr((3*t()+i.t0)%2),i.x,i.y,1,1,i.m)
 	end
 	
 	-- chickens
+	sort_by_y(chick)
 	for c in all(chick) do
 	 set_color(c.c)
-	 spr(anim(c.s,c.t0),c.x,c.y,2,2,c.vx>0)
+	 if(is_on_screen(c.x,c.y,c.l)) spr(anim(c.s,c.t0),c.x,c.y,2,2,c.vx>0)
 	 if c.s==3 then
 	  niceprint(sounds[c.c],nil,c.y-16,9,0,c.x+8)
    niceprint(sounds2[c.c],nil,c.y-8,9,0,c.x+8)	
@@ -204,6 +232,7 @@ function _draw()
  end
  pal()
 
+ -- shake if capturing
 	if s==3 then
  	camera(rnd(6)-3,rnd(6)-3)
  else
@@ -232,6 +261,7 @@ function _draw()
 	 niceprint("chickens caught: "..score.."/"..nbchick,5,5,7,0)
 	end
 	
+	-- game over message
 	if #chick==0 and s!=3 then
 	 if(not sounddone) sfx(3) sounddone=true
 	 niceprint("well done.",nil,30,8,0)
@@ -240,8 +270,9 @@ function _draw()
 	 niceprint("press 🅾️/z to restart",nil,58,8,0)
 	end
 	
+	-- controls message
 	if s!=0 and t()<tmsg then
-	niceprint("move with arrows, catch with z",nil,110,7,0)
+	 niceprint("move with arrows, catch with z",nil,110,7,0)
 	end
 	
 	if s==0 then -- title
@@ -254,10 +285,20 @@ function _draw()
 	 niceprint("by cpiod (code) and",nil,113,7,0)
 	 niceprint("wickedwormwood (pixels)",nil,121,7,0)
 	end
+	camera()
+	print(stat(0).."kib "..(100*stat(1)).."% "..stat(7).."fps",1,23,8)
 end
 
+-- check whether something is on screen
+function is_on_screen(x,y,l)
+ return x+8*l>camx and x<camx+128
+ and y+8*l>camy and y<camy+128
+end
+
+-- set the color of a chicken
 function set_color(c)
  if c==1 then
+ -- orange
   pal()
  elseif c==2 then
 	 -- albinos
@@ -269,7 +310,7 @@ function set_color(c)
 	 pal(10,15)
  
  elseif c==3 then
- -- glas
+ -- glas (green)
   pal()
   pal(9,11)
   pal(4,3)
@@ -298,12 +339,10 @@ function set_color(c)
 	 pal(8,9)
 	 pal(2,4)
 	 pal(10,10)
-	
  end
- 
- 
 end
 
+-- print with shadow
 function niceprint(s,x,y,c1,c2,center)
  center=center or 64
  x=x or center-#s*2
@@ -315,11 +354,12 @@ function niceprint(s,x,y,c1,c2,center)
  print(s,x,y,c1)
 end
 
+-- manhattan distance
 function dist(x,y)
  return abs(x-(camx+64))+abs(y-(camy+64))
 end
 
-
+-- check if a chicken is captured
 function chk_capture()
  local distmax=30
  local distbest=1000
@@ -334,11 +374,10 @@ function chk_capture()
  return best
 end
 
-
+-- make the chickens close to (x,y) run
 function make_run(x,y)
  local distmax=50
  for c in all(chick) do
---  printh(c.x.." "..c.y.." "..dist(c.x,c.y))
   if dist(c.x,c.y)<distmax then
    c.s=5
    c.t=t()+len_state[c.s]+rnd(1)
@@ -346,9 +385,7 @@ function make_run(x,y)
  end
 end
 
-function print_sinus(s,x,y)
-end
-
+-- get the animation sprite number
 function anim(s,t0)
  local n=((t0+t())*speed[s])
  local l=#animation[s]
@@ -368,7 +405,7 @@ __gfx__
 80000000000000800aaaaaaa0aaaaaaa00000999999449900000099999944990000009999994499009c999999994499089999999999449900000000000000000
 800000000000008000a9aaa000a9aaa00000009999998990000000999999999000000099999999900a9988999999999089c99999999999900000000000000000
 800000000000008000aa9aa000aa9aa00000009999988890000000999988999000000099999899900aa009999988999009c99899998890000000000000000000
-8000000800000080000aaa000009aa4000000022999998800000000029989000000000009998800000a00000299890000a998000299800000000000000000000
+8000000800000080000aaa00000aaa4000000022999998800000000029989000000000009998800000a00000299890000a998000299800000000000000000000
 0000000800000000040409009090000400020220000000800000000002080000000002022000080000000000020800000aa00000020800000000000000000000
 00000888880000000040990009000040000022000000880000000002288880000000002200088800000000022888800000a00002288880000000000000000000
 00000008000000000000000000000000000080000000000000000000000040000000800000000000000088000000044000008800000000000000000000000000
