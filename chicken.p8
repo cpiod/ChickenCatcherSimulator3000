@@ -92,6 +92,8 @@ function _update60()
 	if s==0 then
 	 -- title
 	 if btnp(🅾️) then
+	  t0=t()
+	  t1=nil
 	  s=1
 	  tmsg=t()+5
 	 end
@@ -107,18 +109,7 @@ function _update60()
 	   hand_xo=20 hand_yo=-20 s=2 make_run()
 	  end
 	 end
-	 -- controls
-	 if(btn(⬆️)) camy-=5
-	 if(btn(⬇️)) camy+=5
-	 if(btn(⬅️)) camx-=5
-	 if(btn(➡️)) camx+=5
-	 
-	 -- move camera
-	 if(camx<0) camx=0
-	 if(camx>sizex-128) camx=sizex-128
-	 if(camy<0) camy=0
-	 if(camy>sizey-128) camy=sizey-128
-	 
+
 	elseif s==3 and t()>ts then
 	 -- end of capturing animation
   hand_xo=0
@@ -133,6 +124,20 @@ function _update60()
  if(hand_x>hand_xo) hand_x-=1
  if(hand_y<hand_yo) hand_y+=1
 
+ if s==1 or s==2 then
+ 	 -- controls
+	 if(btn(⬆️)) camy-=5
+	 if(btn(⬇️)) camy+=5
+	 if(btn(⬅️)) camx-=5
+	 if(btn(➡️)) camx+=5
+	 
+	 -- move camera
+	 if(camx<0) camx=0
+	 if(camx>sizex-128) camx=sizex-128
+	 if(camy<0) camy=0
+	 if(camy>sizey-128) camy=sizey-128
+	end
+
  -- hand are ready to capture
  if s==2 and hand_x==hand_xo and hand_y==hand_yo then
   c=chk_capture()
@@ -144,6 +149,7 @@ function _update60()
    s=3
    ts=t()+1
    sfx(0)
+   if(#chick==0) t1=t()
   else 
    -- no chicken :(
    hand_xo=0
@@ -258,7 +264,16 @@ function _draw()
 	
 	-- score
 	if s==1 or s==2 or s==3 then
-	 niceprint("chickens caught: "..score.."/"..nbchick,5,5,7,0)
+	 niceprint("chickens: "..score.."/"..nbchick,5,5,7,0)
+	 local d=((t1 and t1 or t())-t0)
+	 d=flr(d*10)/10
+	 if d%1==0 then
+	  d=tostr(d)..".0"
+	 else
+	  d=tostr(d)
+	 end
+	 local s="time: "..d.."s"
+	 niceprint(lpad(s,12),76,5,7,0)
 	end
 	
 	-- game over message
@@ -287,6 +302,11 @@ function _draw()
 	end
 --	camera()
 --	print(stat(0).."kib "..(100*stat(1)).."% "..stat(7).."fps",1,23,8)
+end
+
+function lpad(s,l)
+ if(#s<l) return lpad(" "..s,l)
+ return s
 end
 
 -- check whether something is on screen
